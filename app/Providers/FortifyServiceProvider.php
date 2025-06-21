@@ -6,10 +6,12 @@ use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Mail\SendCodeMail;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -53,6 +55,7 @@ class FortifyServiceProvider extends ServiceProvider
                 $user->two_factor_code = $code;
                 $user->two_factor_expires_at = now()->addMinutes(5);
                 $user->save();
+                Mail::to($user->email)->send(new SendCodeMail($code));
                 return redirect('/two-factor-challenge');
             }
         });
