@@ -9,6 +9,7 @@ use App\Actions\Fortify\UpdateUserProfileInformation;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Auth as FacadesAuth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
@@ -37,22 +38,27 @@ class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-            Fortify::registerView(function () {
-        return view('auth.register');
-    });
-          Fortify::LoginView(function () {
-        return view('auth.login');
-    });
-            $this->app->instance(LoginResponse::class, new class implements LoginResponse {
+        Fortify::registerView(function () {
+            return view('auth.register');
+        });
+        Fortify::LoginView(function () {
+            return view('auth.login');
+        });
+        $this->app->instance(LoginResponse::class, new class implements LoginResponse {
             public function toResponse($request)
             {
-                Auth::logout();
+                $user = $request->user();
+                // genrate 2fa code
+                $code = rand(100000, 999999);
+                $user->two_factor_code = $code;
+                $user->two_factor_expires_at = now()->addMinutes(5);
+                $user->save();
                 return redirect('/two-factor-challenge');
             }
         });
-    
+
         RateLimiter::for('login', function (Request $request) {
-            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())).'|'.$request->ip());
+            $throttleKey = Str::transliterate(Str::lower($request->input(Fortify::username())) . '|' . $request->ip());
 
             return Limit::perMinute(5)->by($throttleKey);
         });
