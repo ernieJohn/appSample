@@ -8,7 +8,7 @@
                 <div class="card-header">{{ __('Two-Factor Authentication') }}</div>
 
                 <div class="card-body">
-                    {{-- <form method="POST" action="{{ route('2fa.verify') }}"> --}}
+                    <form method="POST" action="{{ route('2fa.verify') }}">
                         @csrf
 
                         <div class="row mb-3">

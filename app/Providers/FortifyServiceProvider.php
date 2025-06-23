@@ -8,9 +8,12 @@ use App\Actions\Fortify\UpdateUserPassword;
 use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Mail\SendCodeMail;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Container\Attributes\Auth as AttributesAuth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Auth as FacadesAuth;
+use Illuminate\Support\Facades\Auth as SupportFacadesAuth;
+use Illuminate\Support\Facades\Auth as IlluminateSupportFacadesAuth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
@@ -50,6 +53,8 @@ class FortifyServiceProvider extends ServiceProvider
             public function toResponse($request)
             {
                 $user = $request->user();
+                session(['2fa_user_id' => $user->id]);
+
                 // genrate 2fa code
                 $code = rand(100000, 999999);
                 $user->two_factor_code = $code;
@@ -57,6 +62,7 @@ class FortifyServiceProvider extends ServiceProvider
                 $user->save();
                 Mail::to($user->email)->send(new SendCodeMail($code));
                 return redirect('/two-factor-challenge');
+                Auth::logout();
             }
         });
 
